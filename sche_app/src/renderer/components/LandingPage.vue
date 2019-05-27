@@ -1,17 +1,24 @@
 <template>
     <div>
-      <b-button @click="makeToast()">Show Toast</b-button>
+    <b-form-input @change="onSearch" v-model="search_queue" placeholder="Enter your name"></b-form-input>
+    <div class="mt-2">Value: {{ search_queue }}</div>
     <b-table striped hover :items="items"></b-table>
+      <b-button @click="makeToast()">Show Toast</b-button>
   </div>
 </template>
 
 <script>
   import SystemInformation from './LandingPage/SystemInformation'
+  import { db } from '../db'
 
   export default {
-    name: 'landing-page',
+    name: 'landing-pID',
     components: { SystemInformation },
     methods: {
+      onSearch()
+      {
+        
+      },
       makeToast(append = false) {
         this.toastCount++
         this.$bvToast.toast(`This is toast number ${this.toastCount}`, {
@@ -32,18 +39,19 @@
     },
      data() {
       return {
+        search_queue: '',
         items: [
-          { age: 40, first_name: 'Dickerson', last_name: 'Macdonald' },
-          { age: 21, first_name: 'Larsen', last_name: 'Shaw' },
-          { age: 89, first_name: 'Geneva', last_name: 'Wilson' },
-          { age: 38, first_name: 'Jami', last_name: 'Carney' },
-          { age: 38, first_name: 'Jami', last_name: 'Carney' },
-          { age: 38, first_name: 'Jami', last_name: 'Carney' },
-          { age: 38, first_name: 'Jami', last_name: 'Carney' },
-          { age: 38, first_name: 'Jami', last_name: 'Carney' },
-          { age: 38, first_name: 'Jami', last_name: 'Carney' },
-          { age: 38, first_name: 'Jami', last_name: 'Carney' },
-          { age: 38, first_name: 'Jami', last_name: 'Carney' }
+          { ID: 40, first_name: 'Dickerson', last_name: 'Macdonald' },
+          { ID: 21, first_name: 'Larsen', last_name: 'Shaw' },
+          { ID: 89, first_name: 'Geneva', last_name: 'Wilson' },
+          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
+          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
+          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
+          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
+          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
+          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
+          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
+          { ID: 38, first_name: 'Jami', last_name: 'Carney' }
         ]
       }
     }
