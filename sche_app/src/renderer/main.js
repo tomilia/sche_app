@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import axios from 'axios'
-import BootstrapVue from 'bootstrap-vue'
+//import BootstrapVue from 'bootstrap-vue'
 import App from './App'
 import router from './router'
 import store from './store'
@@ -12,7 +12,7 @@ import { firestorePlugin } from 'vuefire'
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 Vue.http = Vue.prototype.$http = axios
 Vue.config.productionTip = false
-Vue.use(BootstrapVue)
+Vue.use(require('bootstrap-vue/dist/bootstrap-vue.common'))
 Vue.use(firestorePlugin)
 
 /* eslint-disable no-new */

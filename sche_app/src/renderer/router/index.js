@@ -11,6 +11,11 @@ export default new Router({
       component: require('@/components/LandingPage').default
     },
     {
+      path: '/calendar',
+      name: 'CalendarPage',
+      component: require('@/components/Calendar').default
+    },
+    {
       path: '*',
       redirect: '/'
     }
