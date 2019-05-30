@@ -1,60 +1,255 @@
 <template>
     <div>
-    <b-form-input @change="onSearch" v-model="search_queue" placeholder="Enter your name"></b-form-input>
+    <b-form-input @change="onSearch" v-model="search_queue" placeholder="Enter ID/Phone"></b-form-input>
     <div class="mt-2">Value: {{ search_queue }}</div>
-    <b-table striped hover :items="items"></b-table>
-      <b-button @click="makeToast()">Show Toast</b-button>
+    <b-table bordered hover :items="items" :busy="isBusy" @row-clicked="myRowClickHandler" :fields="fields" :tbody-tr-class="rowClass">
+     <div slot="table-busy" class="text-center text-danger my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>Loading...</strong>
+      </div>
+            <template slot="  " slot-scope="row">
+        <b-button size="sm" @click="delete_entry(row)" variant="danger" class="mr-2">
+          X
+        </b-button>
+      </template>
+      </b-table>
+      <b-button variant="success" class="float" v-b-modal.modal-prevent-closing @click="modifying=false">+ Add</b-button>
+          <b-modal
+      id="modal-prevent-closing"
+      ref="modal"
+      title="Submit Your Name"
+      @hidden="resetModal"
+      @ok="handleOk"
+    >
+      <form ref="form" @submit.stop.prevent="handleSubmit">
+        <b-form-group
+          label="Name"
+          label-for="name-input"
+          invalid-feedback="Name is required"
+        >
+          <b-form-input
+            id="name-input"
+            v-model="form.name"
+            required
+          ></b-form-input>
+          
+        </b-form-group>
+          <b-form-group
+          label="Parent Name"
+          
+          label-for="parent-input"
+          invalid-feedback="Parent Name is required"
+        >
+          <b-form-input
+            id="parent-input"
+            v-model="form.parent_name"
+            required
+          ></b-form-input>
+          
+        </b-form-group>
+                <b-form-group
+          label="Phone Number"
+          label-for="phone-input"
+          invalid-feedback="Phone is required"
+        >
+          <b-form-input
+            id="name-input"
+            v-model="form.phone_num"
+            required
+          ></b-form-input>
+          
+        </b-form-group>
+      
+            <b-form-group label="Levels">
+          <b-form-select value="1" v-model="form.levels" :options="level_opts"></b-form-select>
+            </b-form-group>
+            <b-form-group label="Status" >
+      <b-form-radio v-model="status_selected" name="some-radios" value="default">Contacted</b-form-radio>
+      <b-form-radio v-model="status_selected" name="some-radios" value="isBooked">Booked trial lesson</b-form-radio>
+      <b-form-radio v-model="status_selected" name="some-radios" value="isTrial">Finished trial lesson</b-form-radio>
+      <b-form-radio v-model="status_selected" name="some-radios" value="isPaid">Paid</b-form-radio>
+    </b-form-group>
+      </form>
+    </b-modal>
   </div>
 </template>
 
 <script>
   import SystemInformation from './LandingPage/SystemInformation'
   import { db } from '../db'
+  import { functions } from 'firebase';
 
   export default {
     name: 'landing-pID',
-    components: { SystemInformation },
+    components: {
+      SystemInformation
+    },
+      mounted () {
+    this.$bind('items', db.collection('docs'))
+      .then((doc) => {
+        this.toggleBusy()
+      })
+      .catch((error) => {
+        console.log('error in loading: ', error)
+      })
+  },
+
     methods: {
-      onSearch()
-      {
-        
+      onSearch() {
+        let self = this
+        self.items = []
+        self.toggleBusy()
+        db.collection('docs').orderBy("ID").startAt(this.search_queue).endAt(this.search_queue + "\uf8ff").onSnapshot(function (snapshot) {
+
+          if (!snapshot.empty) {
+            self.items = []
+            /*query by id*/
+            snapshot.forEach(function (doc) {
+
+              self.items.push(doc.data());
+              // Find existing recipe in this.recipes
+              // and swap in the new data
+              
+            });
+            self.toggleBusy()
+          } else {
+            /*query by phone*/
+            self.searchByPhone()
+          }
+        })
+
       },
-      makeToast(append = false) {
-        this.toastCount++
-        this.$bvToast.toast(`This is toast number ${this.toastCount}`, {
-          title: 'BootstrapVue Toast',
-          autoHideDelay: 5000,
-          appendToast: append
+      searchByPhone() {
+        let self = this;
+        db.collection('docs').orderBy("phone_num").startAt(this.search_queue).endAt(this.search_queue + "\uf8ff").onSnapshot(function (snapshot) {
+          self.items = [];
+
+          snapshot.forEach(function (doc) {
+           
+            self.items.push(doc.data());
+
+            
+            // Find existing recipe in this.recipes
+            // and swap in the new data
+          });
+          self.toggleBusy()
+        }, function (error) {
+          // h.andle errors
         })
       },
-      open (link) {
-        this.$electron.shell.openExternal(link)
+      createToast(variant = 'success'){
+         this.$bvToast.toast('Create Successfully', {
+          title: `Change on docs`,
+          variant: variant,
+          solid: true
+        })  
       },
-      countDownChanged(dismissCountDown) {
-        this.dismissCountDown = dismissCountDown
+       deleteToast(variant = 'danger') {
+        this.$bvToast.toast('Delete Successfully', {
+          title: `Change on docs`,
+          variant: variant,
+          solid: true
+        })
       },
-      showAlert() {
-        this.dismissCountDown = this.dismissSecs
+      checkFormValidity() {
+        const valid = this.$refs.form.checkValidity()
+        //this.nameState = valid ? 'valid' : 'invalid'
+        return valid
+      },
+        myRowClickHandler(record, index) {
+    // 'record' will be the row data from items
+    // `index` will be the visible row number (available in the v-model 'shownItems')
+         // This will be the item data for the row
+        //this.formEmbed(record.name,record.parent_name,record.phone_num)
+        this.modifying=true
+        this.formEmbed(record.name,record.parent_name,record.phone_num)
+        this.$refs.modal.show()
+        console.log(this.form.name,this.form.parent_name,record.phone_num)
+      },
+      formEmbed(name,parent_name,phone_num){
+        console.log(name,parent_name,phone_num)
+        this.form.name=name
+        this.form.parent_name=parent_name
+        this.form.phone_num=phone_num
+        
+      },
+      resetModal() {
+        this.form.name = ''
+        this.form.parent_name = ''
+        this.form.phone_num = ''
+      },
+      handleOk(bvModalEvt) {
+        // Prevent modal from closing
+        bvModalEvt.preventDefault()
+        // Trigger submit handler
+        this.handleSubmit()
+
+      },
+      handleSubmit() {
+        // Exit when the form isn't valid
+        if (!this.checkFormValidity()) {
+          return
+        }
+        let self = this;
+        //compensate status --> status_selected
+        this.form.status = this.status_selected
+        console.log(this.form.status,this.status_selected)
+        db.collection("docs").add(this.form).then(function () {
+          self.$nextTick(() => {
+            self.$refs.modal.hide()
+            self.createToast()
+          })
+        })
+
+        //bvModalEvt.$refs
+        //conn firebase
+      },
+      rowClass(item, type) {
+        if (!item) return
+        if (item.status === 'isTrial') return 'table-success'
+        if (item.status === 'isPaid') return 'table-danger'
+        if (item.status === 'bookPaid') return 'table-info'
+
+      },
+      delete_entry(row)
+      {
+        let self=this
+        db.collection("docs").doc(row.item.id).delete().then(function(){
+          self.deleteToast()
+        })
+        
+      },
+       toggleBusy() {
+        this.isBusy = !this.isBusy
       }
     },
-     data() {
+    data:
+      function() {
       return {
+        fields:['ID', 'name', 'parent_name','phone_num','  '],
+        form: {
+          ID: '',
+          name: '',
+          parent_name: '',
+          phone_num: '',
+          levels: '1',
+          status: this.status_selected
+        },
+        modifying:false,
+        isBusy: true,
+        init_documents: [],
         search_queue: '',
-        items: [
-          { ID: 40, first_name: 'Dickerson', last_name: 'Macdonald' },
-          { ID: 21, first_name: 'Larsen', last_name: 'Shaw' },
-          { ID: 89, first_name: 'Geneva', last_name: 'Wilson' },
-          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
-          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
-          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
-          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
-          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
-          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
-          { ID: 38, first_name: 'Jami', last_name: 'Carney' },
-          { ID: 38, first_name: 'Jami', last_name: 'Carney' }
+        items: [],
+        status_selected:'default',
+         level_opts: [
+          { value: '1', text: 'Level 1' },
+          { value: '2', text: 'Level 2' },
+          { value: '3', text: 'Level 3' },
+          { value: '4', text: 'Level 4' }
         ]
       }
     }
+    
   }
 </script>
 
@@ -99,6 +294,20 @@
     flex-direction: column;
   }
 
+.float{
+	position:fixed;
+	bottom:35px;
+	right:35px;
+	background-color:#0C9;
+	color:#FFF;
+	border-radius:50px;
+	text-align:center;
+	box-shadow: 2px 2px 3px #ccc;
+}
+
+.my-float{
+	margin-top:22px;
+}
   .welcome {
     color: #555;
     font-size: 23px;
