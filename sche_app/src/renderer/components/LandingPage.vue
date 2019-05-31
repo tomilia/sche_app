@@ -182,7 +182,7 @@
         this.form.name = ''
         this.form.parent_name = ''
         this.form.phone_num = ''
-        this.form.leves = '1'
+        this.form.levels = '1'
         this.status_selected = 'default'
       },
       handleOk(bvModalEvt) {
@@ -191,6 +191,21 @@
         // Trigger submit handler
         this.handleSubmit()
 
+      },
+      ignoreDateToForm(){
+        return {
+          ID: this.form.id || "",
+          name: this.form.name,
+          parent_name: this.form.parent_name,
+          phone_num: this.form.phone_num,
+          levels: this.form.levels,
+          status: this.form.status
+        }
+      },
+      addDateToForm(){
+      var today = new Date();
+      var time = today
+      this.form.create_at =time
       },
       handleSubmit(record = null) {
         // Exit when the form isn't valid
@@ -202,6 +217,7 @@
         this.form.status = this.status_selected
         console.log(this.form.status, this.status_selected)
         if (!this.modifying) {
+          
           db.collection("docs").add(this.form).then(function () {
             self.$nextTick(() => {
               self.$refs.modal.hide()
@@ -209,8 +225,8 @@
             })
           })
         } else {
-
-          db.collection("docs").doc(this.current_mod_record).update(this.form).then(function () {
+          var x=this.ignoreDateToForm()
+          db.collection("docs").doc(this.current_mod_record).update(x).then(function () {
             self.$nextTick(() => {
               self.$refs.modal.hide()
               self.modifyToast()
@@ -241,14 +257,15 @@
     },
     data: function () {
       return {
-        fields: ['ID', 'name', 'parent_name', 'phone_num', 'levels', '  '],
+        fields: ['ID', 'name', 'parent_name', 'phone_num', 'levels','create_at' ,'  '],
         form: {
           ID: '',
           name: '',
           parent_name: '',
           phone_num: '',
           levels: '1',
-          status: this.status_selected
+          status: this.status_selected,
+          create_at:new Date()
         },
         filter: {
           level: null,
