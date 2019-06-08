@@ -1,6 +1,6 @@
 <template>
  <div>
-     <p>Under-construction</p>
+     <h1>Under-constructino</h1>
  </div>
 </template>
 

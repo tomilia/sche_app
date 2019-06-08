@@ -21,8 +21,8 @@
         <b-spinner class="align-middle"></b-spinner>
         <strong>Loading...</strong>
       </div>
-      <template slot="  " slot-scope="row">
-        <b-button size="sm" @click="delete_entry(row)" variant="danger" class="mr-2">
+      <template slot="  " slot-scope="record">
+        <b-button size="sm" @click="delete_entry(record)" variant="danger" class="mr-2">
           X
         </b-button>
       </template>
@@ -68,44 +68,122 @@
 
   export default {
     name: 'landing-pID',
+  
     mounted() {
-      this.$bind('items', db.collection('docs'))
+      let self = this
+      self.$bind('items', db.collection('docs'))
         .then((doc) => {
+           console.log("status and lv:",this.status,this.lv)
+          if(this.isBusy==true)
           this.toggleBusy()
         })
         .catch((error) => {
           console.log('error in loading: ', error)
         })
+      
+ db.collection('docs')
+  .onSnapshot(querySnapshot => {
+    self.items=[]
+    console.log("now filter:",self.filter.lv,self.filter.status)
+       //construction for add ,modify and remove action
+                
+    self.onFilterChange()
+    
+  })
     },
 
     methods: {
       onFilterChange(event){
-        let lv=this.filter.level
-        let status=this.filter.status
+       
+        let self=this
+        let lv=self.filter.level
+        let status=self.filter.status
         
+        if(status==null&&lv==null)
+        {
+            self.onSearch()
+            if(self.isBusy)
+            self.toggleBusy()
+        }
+        if(lv!=null&&status==null)
+        {
+          self.toggleBusy()
+          //filtering by lv
+          db.collection('docs').where("levels","==",lv).get().then(function(snapshot){
+              console.log("filter lv:",lv,status)
+              self.items=[]
+              snapshot.forEach(function (doc) {
+                
+              var temp = doc.data()
+              temp.id = doc.id
+              console.log(temp)
+              self.items.push(temp)
+               
+            });
+            if(self.isBusy)
+            self.toggleBusy()
+          })
+        }
+        if(lv==null&&status!=null)
+        {
+          self.toggleBusy()
+          //filtering by lv
+          db.collection('docs').where("status","==",status).get().then(function(snapshot){
+              console.log("filter st:",lv,status)
+              self.items=[]
+              snapshot.forEach(function (doc) {
+                
+              var temp = doc.data()
+              temp.id = doc.id
+              console.log(temp)
+              self.items.push(temp)
+               
+            });
+            if(self.isBusy)
+            self.toggleBusy()
+          })
+        }
         if(lv!=null&&status!=null)
         {
-          console.log(lv,status)
+          self.toggleBusy()
+          //filtering by lv
+          db.collection('docs').where("levels","==",lv).where("status","==",status).get().then(function(snapshot){
+              console.log("filter st:",lv,status)
+              self.items=[]
+              snapshot.forEach(function (doc) {
+                
+              var temp = doc.data()
+              temp.id = doc.id
+              console.log(temp)
+              self.items.push(temp)
+               
+            });
+            if(self.isBusy)
+            self.toggleBusy()
+          })
+
           //firebase get filtered result
         }
+        
       },
       onSearch() {
         let self = this
         self.items = []
-        self.toggleBusy()
-        db.collection('docs').orderBy("ID").startAt(this.search_queue).endAt(this.search_queue + "\uf8ff").onSnapshot(function (snapshot) {
+        db.collection('docs').orderBy("ID").startAt(this.search_queue).endAt(this.search_queue + "\uf8ff").get().then(function (snapshot) {
 
           if (!snapshot.empty) {
             self.items = []
             /*query by id*/
             snapshot.forEach(function (doc) {
-
-              self.items.push(doc.data());
+              
+              var temp = doc.data()
+              temp.id = doc.id
+              console.log(temp)
+              self.items.push(temp)
               // Find existing recipe in this.recipes
               // and swap in the new data
 
             });
-            self.toggleBusy()
           } else {
             /*query by phone*/
             self.searchByPhone()
@@ -126,7 +204,6 @@
             // Find existing recipe in this.recipes
             // and swap in the new data
           });
-          self.toggleBusy()
         }, function (error) {
           // h.andle errors
         })
@@ -162,6 +239,7 @@
         // `index` will be the visible row number (available in the v-model 'shownItems')
         // This will be the item data for the row
         //this.formEmbed(record.name,record.parent_name,record.phone_num)
+    
         this.modifying = true
         this.current_mod_record = record.id
         this.formEmbed(record.name, record.parent_name, record.phone_num, record.levels, record.status)
@@ -176,7 +254,7 @@
         this.form.phone_num = phone_num
         this.form.levels = levels
         console.log(status)
-        this.status_selected = status
+        //this.status_selected = status
       },
       resetModal() {
         this.form.name = ''
@@ -205,6 +283,7 @@
       addDateToForm(){
       var today = new Date();
       var time = today
+
       this.form.create_at =time
       },
       handleSubmit(record = null) {
@@ -215,7 +294,7 @@
         let self = this;
         //compensate status --> status_selected
         this.form.status = this.status_selected
-        console.log(this.form.status, this.status_selected)
+        console.log("former:",this.form.status, this.status_selected)
         if (!this.modifying) {
           
           db.collection("docs").add(this.form).then(function () {
@@ -245,10 +324,14 @@
 
       },
       delete_entry(row) {
+        //delete and refresh
+         console.log(row)
         let self = this
+       
         db.collection("docs").doc(row.item.id).delete().then(function () {
+          
           self.deleteToast()
-        })
+        });
 
       },
       toggleBusy() {
@@ -259,6 +342,7 @@
       return {
         fields: ['ID', 'name', 'parent_name', 'phone_num', 'levels','create_at' ,'  '],
         form: {
+          id: '',
           ID: '',
           name: '',
           parent_name: '',
@@ -278,7 +362,12 @@
         current_mod_record: '',
         items: [],
         status_selected: 'default',
-        level_opts: [{
+        level_opts: [
+          {
+            value: null,
+            text: '---Any Level---'
+          },
+          {
             value: '1',
             text: 'Level 1'
           },
@@ -295,7 +384,12 @@
             text: 'Level 3+'
           }
         ],
-        status_opts: [{
+        status_opts: [
+          {
+            value: null,
+            text: '---Any Status---'
+          }
+          ,{
             value: 'default',
             text: 'Contacted'
           },
@@ -308,7 +402,7 @@
             text: 'Finished trial lesson'
           },
           {
-            value: 'Paid',
+            value: 'isPaid',
             text: 'Paid'
           }
         ]
