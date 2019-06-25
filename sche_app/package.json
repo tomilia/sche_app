@@ -57,12 +57,15 @@
     "bootstrap-vue": "^2.0.0-rc.20",
     "firebase": "^6.0.4",
     "jquery": "^3.4.1",
+    "luxon": "^1.16.0",
     "vue": "^2.6.10",
+    "vue-datetime": "^1.0.0-beta.10",
     "vue-electron": "^1.0.6",
     "vue-router": "^3.0.1",
     "vuefire": "^2.0.0",
     "vuex": "^3.0.1",
-    "vuex-electron": "^1.0.0"
+    "vuex-electron": "^1.0.0",
+    "weekstart": "^1.0.0"
   },
   "devDependencies": {
     "ajv": "^6.5.0",

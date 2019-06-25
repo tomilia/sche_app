@@ -53,6 +53,18 @@
           </b-form-radio>
           <b-form-radio v-model="status_selected" name="some-radios" value="isPaid">Paid</b-form-radio>
         </b-form-group>
+        <b-form-group label="First Lesson">
+        <datetime type="datetime" v-model="form.lesson"></datetime>
+        </b-form-group>
+        <b-form-group label="Remarks">
+            <b-form-textarea
+              id="textarea"
+              v-model="form.remarks"
+              placeholder="Enter something..."
+              rows="3"
+              max-rows="6"
+            ></b-form-textarea>
+        </b-form-group>
       </form>
     </b-modal>
   </div>
@@ -68,7 +80,6 @@
 
   export default {
     name: 'landing-pID',
-  
     mounted() {
       let self = this
       self.$bind('items', db.collection('docs'))
@@ -116,6 +127,7 @@
                 
               var temp = doc.data()
               temp.id = doc.id
+
               console.log(temp)
               self.items.push(temp)
                
@@ -242,17 +254,19 @@
     
         this.modifying = true
         this.current_mod_record = record.id
-        this.formEmbed(record.name, record.parent_name, record.phone_num, record.levels, record.status)
+        this.formEmbed(record.name, record.parent_name, record.phone_num, record.levels, record.status,record.lesson,record.remarks)
 
         this.$refs.modal.show()
 
       },
-      formEmbed(name, parent_name, phone_num, levels, status) {
+      formEmbed(name, parent_name, phone_num, levels, status,lesson,remarks) {
         console.log(name, parent_name, phone_num)
         this.form.name = name
         this.form.parent_name = parent_name
         this.form.phone_num = phone_num
         this.form.levels = levels
+        this.form.lesson = lesson
+        this.form.remarks = remarks
         console.log(status)
         //this.status_selected = status
       },
@@ -272,13 +286,26 @@
       },
       ignoreDateToForm(){
         return {
-          ID: this.form.id || "",
           name: this.form.name,
           parent_name: this.form.parent_name,
           phone_num: this.form.phone_num,
           levels: this.form.levels,
-          status: this.form.status
+          status: this.form.status,
+          lesson: this.form.lesson,
+          remarks: this.form.remarks
         }
+      },
+      update_new_id(id,self){
+      
+        var new_id={
+          'ID':id.toLowerCase().substring(0,7)
+        }
+      db.collection("docs").doc(id).update(new_id).then(function () {
+            self.$nextTick(() => {
+              self.$refs.modal.hide()
+              self.modifyToast()
+            })
+          })
       },
       addDateToForm(){
       var today = new Date();
@@ -296,12 +323,13 @@
         this.form.status = this.status_selected
         console.log("former:",this.form.status, this.status_selected)
         if (!this.modifying) {
+          this.form.create_at = new Date().toLocaleString()
+          console.log(this.form.create_at)
+         
           
-          db.collection("docs").add(this.form).then(function () {
-            self.$nextTick(() => {
-              self.$refs.modal.hide()
-              self.createToast()
-            })
+          db.collection("docs").add(this.form).then(function (snapshot) {
+            self.update_new_id(snapshot.id,self)
+      
           })
         } else {
           var x=this.ignoreDateToForm()
@@ -340,7 +368,22 @@
     },
     data: function () {
       return {
-        fields: ['ID', 'name', 'parent_name', 'phone_num', 'levels','create_at' ,'  '],
+        fields: [
+          'ID',
+          'name', 
+          'parent_name', 
+          'phone_num', 
+          'levels',
+          {
+            key: 'create_at',
+            sortable: true
+          }
+          ,
+          'lesson'
+          ,
+          'remarks'
+          ,
+          '  '],
         form: {
           id: '',
           ID: '',
@@ -349,7 +392,9 @@
           phone_num: '',
           levels: '1',
           status: this.status_selected,
-          create_at:new Date()
+          create_at:"",
+          lesson:"",
+          remarks:""
         },
         filter: {
           level: null,
