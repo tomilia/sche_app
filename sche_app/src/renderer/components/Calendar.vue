@@ -11,7 +11,7 @@
             <h3>Schedule an event</h3>
             <event-form />
           </div>
-          
+         
         </div>
       </div>
     </template>
@@ -66,3 +66,5 @@
       margin-bottom: 10px;
     }
     </style>
+
+    

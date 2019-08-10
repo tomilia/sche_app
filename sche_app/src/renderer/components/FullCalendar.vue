@@ -1,10 +1,30 @@
 <template>
+<div>
       <FullCalendar
     defaultView="dayGridMonth" :plugins="calendarPlugins"
     @dateClick="handleDateClick"
     @eventClick="myEventSelected"
     :events='events'
       />
+       <b-modal id="modal-prevent-closing" ref="modal" title="Submit Your Name" >
+      <form ref="form" >
+        <b-form-group label="Name" label-for="name-input" invalid-feedback="Name is required">
+          <b-form-input id="name-input" required></b-form-input>
+
+        </b-form-group>
+        <b-form-group label="Parent Name" label-for="parent-input" invalid-feedback="Parent Name is required">
+          <b-form-input id="parent-input"  required></b-form-input>
+
+        </b-form-group>
+        <b-form-group label="Phone Number" label-for="phone-input" invalid-feedback="Phone is required">
+          <b-form-input id="name-input"  required></b-form-input>
+
+        </b-form-group>
+
+      </form>
+    </b-modal>
+          
+      </div>
     </template>
 
     <script>
@@ -24,10 +44,11 @@
       },
       methods:{
           handleDateClick(arg) {
-    console.log(arg.date)
+    console.log(arg)
   },
          myEventSelected(event, jsEvent, pos) {
-        console.log('eventClick', event, jsEvent, pos)
+        console.log('eventClick', event.event.id, jsEvent, pos)
+        this.$refs.modal.show()
       }
       },
      
@@ -60,6 +81,7 @@
     .green {
       font-size: 13px;
       font-weight: 500;
+      color: #ffffff;
       text-transform: capitalize;
     }
     .event-item {

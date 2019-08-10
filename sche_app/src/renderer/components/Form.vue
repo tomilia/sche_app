@@ -35,6 +35,8 @@
             start: '',
             end: '',
             backgroundColor: '',
+            id:'',
+            textColor: '#fff',
             data: {
               description: ''
             }
@@ -52,7 +54,7 @@
           }
           console.log(JSON.stringify(event));
           db.collection("schedule").add(event).then(function (snapshot) {
-            
+            snapshot.update({"id":snapshot.id})
       
           })
           
@@ -71,6 +73,7 @@
             start: '',
             end: '',
             backgroundColor: '',
+            textColor: '#fff',
             data: {
               description: ''
             }
