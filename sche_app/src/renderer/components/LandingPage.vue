@@ -21,8 +21,8 @@
         <b-spinner class="align-middle"></b-spinner>
         <strong>Loading...</strong>
       </div>
-      <template slot="  " slot-scope="row">
-        <b-button size="sm" @click="delete_entry(row)" variant="danger" class="mr-2">
+      <template slot="  " slot-scope="record">
+        <b-button size="sm" @click="delete_entry(record)" variant="danger" class="mr-2">
           X
         </b-button>
       </template>
@@ -53,6 +53,18 @@
           </b-form-radio>
           <b-form-radio v-model="status_selected" name="some-radios" value="isPaid">Paid</b-form-radio>
         </b-form-group>
+        <b-form-group label="First Lesson">
+        <datetime type="datetime" v-model="form.lesson"></datetime>
+        </b-form-group>
+        <b-form-group label="Remarks">
+            <b-form-textarea
+              id="textarea"
+              v-model="form.remarks"
+              placeholder="Enter something..."
+              rows="3"
+              max-rows="6"
+            ></b-form-textarea>
+        </b-form-group>
       </form>
     </b-modal>
   </div>
@@ -69,43 +81,121 @@
   export default {
     name: 'landing-pID',
     mounted() {
-      this.$bind('items', db.collection('docs'))
+      let self = this
+      self.$bind('items', db.collection('docs'))
         .then((doc) => {
+           console.log("status and lv:",this.status,this.lv)
+          if(this.isBusy==true)
           this.toggleBusy()
         })
         .catch((error) => {
           console.log('error in loading: ', error)
         })
+      
+ db.collection('docs')
+  .onSnapshot(querySnapshot => {
+    self.items=[]
+    console.log("now filter:",self.filter.lv,self.filter.status)
+       //construction for add ,modify and remove action
+                
+    self.onFilterChange()
+    
+  })
     },
 
     methods: {
       onFilterChange(event){
-        let lv=this.filter.level
-        let status=this.filter.status
+       
+        let self=this
+        let lv=self.filter.level
+        let status=self.filter.status
         
+        if(status==null&&lv==null)
+        {
+            self.onSearch()
+            if(self.isBusy)
+            self.toggleBusy()
+        }
+        if(lv!=null&&status==null)
+        {
+          self.toggleBusy()
+          //filtering by lv
+          db.collection('docs').where("levels","==",lv).get().then(function(snapshot){
+              console.log("filter lv:",lv,status)
+              self.items=[]
+              snapshot.forEach(function (doc) {
+                
+              var temp = doc.data()
+              temp.id = doc.id
+
+              console.log(temp)
+              self.items.push(temp)
+               
+            });
+            if(self.isBusy)
+            self.toggleBusy()
+          })
+        }
+        if(lv==null&&status!=null)
+        {
+          self.toggleBusy()
+          //filtering by lv
+          db.collection('docs').where("status","==",status).get().then(function(snapshot){
+              console.log("filter st:",lv,status)
+              self.items=[]
+              snapshot.forEach(function (doc) {
+                
+              var temp = doc.data()
+              temp.id = doc.id
+              console.log(temp)
+              self.items.push(temp)
+               
+            });
+            if(self.isBusy)
+            self.toggleBusy()
+          })
+        }
         if(lv!=null&&status!=null)
         {
-          console.log(lv,status)
+          self.toggleBusy()
+          //filtering by lv
+          db.collection('docs').where("levels","==",lv).where("status","==",status).get().then(function(snapshot){
+              console.log("filter st:",lv,status)
+              self.items=[]
+              snapshot.forEach(function (doc) {
+                
+              var temp = doc.data()
+              temp.id = doc.id
+              console.log(temp)
+              self.items.push(temp)
+               
+            });
+            if(self.isBusy)
+            self.toggleBusy()
+          })
+
           //firebase get filtered result
         }
+        
       },
       onSearch() {
         let self = this
         self.items = []
-        self.toggleBusy()
-        db.collection('docs').orderBy("ID").startAt(this.search_queue).endAt(this.search_queue + "\uf8ff").onSnapshot(function (snapshot) {
+        db.collection('docs').orderBy("ID").startAt(this.search_queue).endAt(this.search_queue + "\uf8ff").get().then(function (snapshot) {
 
           if (!snapshot.empty) {
             self.items = []
             /*query by id*/
             snapshot.forEach(function (doc) {
-
-              self.items.push(doc.data());
+              
+              var temp = doc.data()
+              temp.id = doc.id
+              console.log(temp)
+              self.items.push(temp)
               // Find existing recipe in this.recipes
               // and swap in the new data
 
             });
-            self.toggleBusy()
           } else {
             /*query by phone*/
             self.searchByPhone()
@@ -126,7 +216,6 @@
             // Find existing recipe in this.recipes
             // and swap in the new data
           });
-          self.toggleBusy()
         }, function (error) {
           // h.andle errors
         })
@@ -162,21 +251,24 @@
         // `index` will be the visible row number (available in the v-model 'shownItems')
         // This will be the item data for the row
         //this.formEmbed(record.name,record.parent_name,record.phone_num)
+    
         this.modifying = true
         this.current_mod_record = record.id
-        this.formEmbed(record.name, record.parent_name, record.phone_num, record.levels, record.status)
+        this.formEmbed(record.name, record.parent_name, record.phone_num, record.levels, record.status,record.lesson,record.remarks)
 
         this.$refs.modal.show()
 
       },
-      formEmbed(name, parent_name, phone_num, levels, status) {
+      formEmbed(name, parent_name, phone_num, levels, status,lesson,remarks) {
         console.log(name, parent_name, phone_num)
         this.form.name = name
         this.form.parent_name = parent_name
         this.form.phone_num = phone_num
         this.form.levels = levels
+        this.form.lesson = lesson
+        this.form.remarks = remarks
         console.log(status)
-        this.status_selected = status
+        //this.status_selected = status
       },
       resetModal() {
         this.form.name = ''
@@ -194,17 +286,31 @@
       },
       ignoreDateToForm(){
         return {
-          ID: this.form.id || "",
           name: this.form.name,
           parent_name: this.form.parent_name,
           phone_num: this.form.phone_num,
           levels: this.form.levels,
-          status: this.form.status
+          status: this.form.status,
+          lesson: this.form.lesson,
+          remarks: this.form.remarks
         }
+      },
+      update_new_id(id,self){
+      
+        var new_id={
+          'ID':id.toLowerCase().substring(0,7)
+        }
+      db.collection("docs").doc(id).update(new_id).then(function () {
+            self.$nextTick(() => {
+              self.$refs.modal.hide()
+              self.modifyToast()
+            })
+          })
       },
       addDateToForm(){
       var today = new Date();
       var time = today
+
       this.form.create_at =time
       },
       handleSubmit(record = null) {
@@ -215,14 +321,15 @@
         let self = this;
         //compensate status --> status_selected
         this.form.status = this.status_selected
-        console.log(this.form.status, this.status_selected)
+        console.log("former:",this.form.status, this.status_selected)
         if (!this.modifying) {
+          this.form.create_at = new Date().toLocaleString()
+          console.log(this.form.create_at)
+         
           
-          db.collection("docs").add(this.form).then(function () {
-            self.$nextTick(() => {
-              self.$refs.modal.hide()
-              self.createToast()
-            })
+          db.collection("docs").add(this.form).then(function (snapshot) {
+            self.update_new_id(snapshot.id,self)
+      
           })
         } else {
           var x=this.ignoreDateToForm()
@@ -245,10 +352,14 @@
 
       },
       delete_entry(row) {
+        //delete and refresh
+         console.log(row)
         let self = this
+       
         db.collection("docs").doc(row.item.id).delete().then(function () {
+          
           self.deleteToast()
-        })
+        });
 
       },
       toggleBusy() {
@@ -257,15 +368,33 @@
     },
     data: function () {
       return {
-        fields: ['ID', 'name', 'parent_name', 'phone_num', 'levels','create_at' ,'  '],
+        fields: [
+          'ID',
+          'name', 
+          'parent_name', 
+          'phone_num', 
+          'levels',
+          {
+            key: 'create_at',
+            sortable: true
+          }
+          ,
+          'lesson'
+          ,
+          'remarks'
+          ,
+          '  '],
         form: {
+          id: '',
           ID: '',
           name: '',
           parent_name: '',
           phone_num: '',
           levels: '1',
           status: this.status_selected,
-          create_at:new Date()
+          create_at:"",
+          lesson:"",
+          remarks:""
         },
         filter: {
           level: null,
@@ -278,7 +407,12 @@
         current_mod_record: '',
         items: [],
         status_selected: 'default',
-        level_opts: [{
+        level_opts: [
+          {
+            value: null,
+            text: '---Any Level---'
+          },
+          {
             value: '1',
             text: 'Level 1'
           },
@@ -295,7 +429,12 @@
             text: 'Level 3+'
           }
         ],
-        status_opts: [{
+        status_opts: [
+          {
+            value: null,
+            text: '---Any Status---'
+          }
+          ,{
             value: 'default',
             text: 'Contacted'
           },
@@ -308,7 +447,7 @@
             text: 'Finished trial lesson'
           },
           {
-            value: 'Paid',
+            value: 'isPaid',
             text: 'Paid'
           }
         ]
