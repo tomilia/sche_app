@@ -36,8 +36,9 @@
           <b-form-input id="name-input"  required></b-form-input>
 
         </b-form-group>
-
+        
       </form>
+      <b-button @click="deleteEvent" variant="danger">Delete</b-button>
     </b-modal>
           
       </div>
@@ -46,6 +47,7 @@
     <script>
     import FullCalendar from '@fullcalendar/vue';
     import dayGridPlugin from '@fullcalendar/daygrid';
+    import {db} from '../db';
     import timeGridPlugin from '@fullcalendar/timegrid';
     import momentPlugin from '@fullcalendar/moment';
     import moment from 'moment'
@@ -69,6 +71,9 @@
           }
       },
       methods:{
+        deleteEvent(event){
+            //deleting the event place
+        },
             handleSelect(info) {
       console.log('form' + info)
     },
@@ -76,7 +81,7 @@
     console.log(arg)
   },
          myEventSelected(event, jsEvent, pos) {
-        console.log('eventClick', event.event.id, jsEvent, pos)
+        console.log('eventClick', event, jsEvent, pos)
         this.$refs.modal.show()
       }
       },
