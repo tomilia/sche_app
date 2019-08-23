@@ -1,26 +1,27 @@
 <template>
 <div>
-      <FullCalendar
-    defaultView="timeGridWeek" 
-    :plugins="calendarPlugins"
-    :all-day-slot="false"
-    slot-duration="00:30"
-    select-mirror="true"
-    min-time="07:00:00"
-    max-time="23:00:00"
-    selectable="true"
-          :unselect-auto="false"
+          <FullCalendar
+      :plugins="calendarPlugins"
+      defaultView="timeGridWeek"
+      :all-day-slot="false"
+      :unselect-auto="false"
       :select-overlap="false"
+      :events='events'
       :business-hours="{
         startTime: '07:00',
         endTime:'18:00',
         daysOfWeek: [ 1, 2, 3, 4, 5, 6, 0 ]
       }"
-    @dateClick="handleDateClick"
-    @eventClick="myEventSelected"
-    @select="handleSelect"
-    :events='events'
-      />
+      :select-allow="handlerSeelctAllow"
+      select-mirror="true"
+      min-time="07:00:00"
+      max-time="23:00:00"
+      selectable="true"
+      slot-duration="00:30"
+      slot-label-format="HH:mm"
+      @dateClick="handleDateClick"
+      @eventClick="myEventSelected"
+      @select="handleSelect"/>
        <b-modal id="modal-prevent-closing" ref="modal" title="Submit Your Name" >
       <form ref="form" >
         <b-form-group label="Name" label-for="name-input" invalid-feedback="Name is required">
@@ -46,6 +47,8 @@
     import FullCalendar from '@fullcalendar/vue';
     import dayGridPlugin from '@fullcalendar/daygrid';
     import timeGridPlugin from '@fullcalendar/timegrid';
+    import momentPlugin from '@fullcalendar/moment';
+    import moment from 'moment'
     import interactionPlugin from '@fullcalendar/interaction';
     export default {
       name: 'Calendar',
@@ -55,13 +58,19 @@
       },
       data(){
           return{
-            
-          calendarPlugins: [ dayGridPlugin, interactionPlugin, timeGridPlugin]
+      handlerSeelctAllow: info => {
+        console.log(moment().format('LLLL'))
+        const currentDate = new Date()
+        const start = info.start
+        const end = info.end
+        return (start <= end && start >= currentDate)
+      },
+          calendarPlugins: [ dayGridPlugin, interactionPlugin, timeGridPlugin, momentPlugin]
           }
       },
       methods:{
             handleSelect(info) {
-      console.log('form' + info.startStr + ' to ' + info.endStr)
+      console.log('form' + info)
     },
           handleDateClick(arg) {
     console.log(arg)
@@ -79,6 +88,7 @@
     <style>
     @import '~@fullcalendar/core/main.css';
     @import '~@fullcalendar/daygrid/main.css';
+    @import '~@fullcalendar/timegrid/main.css';
     .red {
       background: rgb(235, 77, 77) !important;
       color: whitesmoke !important;

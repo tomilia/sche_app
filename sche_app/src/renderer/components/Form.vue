@@ -4,10 +4,10 @@
           <input type="text" placeholder="Event title" v-model="event.title"/>
         </div>
         <div class="input-holder">
-          <date-picker :placeholder="'Start date'" v-model="event.start" /> 
+          <datetime type="datetime" placeholder="Start time" v-model="event.start" /> 
         </div>
         <div class="input-holder">
-          <date-picker :placeholder="'End date'" v-model="event.end"/> 
+          <datetime type="datetime" placeholder="Start time" v-model="event.end"/> 
         </div>
         <div class="input-holder">
           <textarea placeholder="Event description" rows="4" v-model="event.data.description" ></textarea>
@@ -22,8 +22,9 @@
     </template>
 
     <script>
-    import DatePicker from 'vuejs-datepicker';
+    import {Datetime} from 'vue-datetime';
     import format from 'date-fns/format';
+    import 'vue-datetime/dist/vue-datetime.css'
     import ColorPicker from './ColorPicker';
     import {db} from '../db'
     export default {
@@ -45,20 +46,19 @@
       },
       methods: {
         async handleSubmit(){
-          const start = format(this.event.start, 'YYYY-MM-DD');
-          const end = format(this.event.end, 'YYYY-MM-DD');
+          const start = format(this.event.start, 'YYYY-MM-DD HH:mm');
+          const end = format(this.event.end, 'YYYY-MM-DD HH:mm');
+          console.log(start);
+          console.log(end);
           const event = {
             ...this.event,
             start,
             end
           }
-          console.log(JSON.stringify(event));
           db.collection("schedule").add(event).then(function (snapshot) {
             snapshot.update({"id":snapshot.id})
       
           })
-          
-          const res = await req.json();
           this.resetValues();
         },
         selectColor(color){
@@ -81,7 +81,7 @@
         }
       },
       components: {
-        DatePicker,
+        Datetime,
         ColorPicker
       }
     }

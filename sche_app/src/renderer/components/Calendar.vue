@@ -2,9 +2,9 @@
       <div id="app">
         <div class="main">
           <div class="calendar-holder">
-              <calendar 
-    :events='events'
-      />
+              <calendar
+              :events=events
+              />
           </div>
           
           <div class="form-holder">
