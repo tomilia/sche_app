@@ -4,7 +4,7 @@
       :plugins="calendarPlugins"
       defaultView="timeGridWeek"
       :all-day-slot="false"
-      :unselect-auto="false"
+      :unselect-auto="true"
       :select-overlap="false"
       :events='events'
       :business-hours="{
@@ -22,7 +22,7 @@
       @dateClick="handleDateClick"
       @eventClick="myEventSelected"
       @select="handleSelect"/>
-       <b-modal id="modal-prevent-closing" ref="modal" title="Submit Your Name" >
+      <b-modal @submit="postEvent" id="modal-prevent-closing" ref="modal" title="Submit Your Name" >
       <form ref="form" >
         <b-form-group label="Name" label-for="name-input" invalid-feedback="Name is required">
           <b-form-input id="name-input" required></b-form-input>
@@ -34,13 +34,10 @@
         </b-form-group>
         <b-form-group label="Phone Number" label-for="phone-input" invalid-feedback="Phone is required">
           <b-form-input id="name-input"  required></b-form-input>
-
         </b-form-group>
-        
       </form>
       <b-button @click="deleteEvent" variant="danger">Delete</b-button>
     </b-modal>
-          
       </div>
     </template>
 
@@ -48,6 +45,7 @@
     import FullCalendar from '@fullcalendar/vue';
     import dayGridPlugin from '@fullcalendar/daygrid';
     import {db} from '../db';
+    import format from 'date-fns/format';
     import timeGridPlugin from '@fullcalendar/timegrid';
     import momentPlugin from '@fullcalendar/moment';
     import moment from 'moment'
@@ -56,7 +54,7 @@
       name: 'Calendar',
       props: ['events'],
       components: {
-        FullCalendar
+        FullCalendar,
       },
       data(){
           return{
@@ -71,11 +69,42 @@
           }
       },
       methods:{
+        async handleSubmit(event){
+          const start = format(event.start, 'YYYY-MM-DD HH:mm');
+          const end = format(event.end, 'YYYY-MM-DD HH:mm');
+          console.log(start);
+          console.log(end);
+
+          const events = {
+            ...this.event,
+            start,
+            end
+          }
+          /*
+            modal for event name
+            description
+            color?
+            
+          */
+           this.$refs.modal.show()
+           /*
+           wtf is ok
+          db.collection("schedule").add(events).then(function (snapshot) {
+            snapshot.update({"id":snapshot.id})
+            console.log(snapshot)
+          })
+          */
+          
+        },
         deleteEvent(event){
             //deleting the event place
         },
-            handleSelect(info) {
-      console.log('form' + info)
+        postEvent(event){
+          console.log("dksovos")
+        },
+            handleSelect(event) {
+      console.log('form' + event.start + event.end)
+      this.handleSubmit(event)
     },
           handleDateClick(arg) {
     console.log(arg)

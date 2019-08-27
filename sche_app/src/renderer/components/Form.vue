@@ -26,6 +26,7 @@
     import format from 'date-fns/format';
     import 'vue-datetime/dist/vue-datetime.css'
     import ColorPicker from './ColorPicker';
+    
     import {db} from '../db'
     export default {
       name: 'EventForm',
