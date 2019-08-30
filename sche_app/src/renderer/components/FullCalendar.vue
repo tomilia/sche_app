@@ -4,7 +4,7 @@
       :plugins="calendarPlugins"
       defaultView="timeGridWeek"
       :all-day-slot="false"
-      :unselect-auto="false"
+      :unselect-auto="true"
       :select-overlap="false"
       :events='events'
       :business-hours="{
@@ -22,32 +22,28 @@
       @dateClick="handleDateClick"
       @eventClick="myEventSelected"
       @select="handleSelect"/>
-       <b-modal id="modal-prevent-closing" ref="modal" title="Submit Your Name" >
-      <form ref="form" >
+      <b-modal @ok="handleSubmit" id="modal-prevent-closing" ref="modal" title="Submit Your Name" >
+      <form ref="form">
         <b-form-group label="Name" label-for="name-input" invalid-feedback="Name is required">
-          <b-form-input id="name-input" required></b-form-input>
+          <b-form-input id="name-input" v-model="event.title" required></b-form-input>
 
         </b-form-group>
-        <b-form-group label="Parent Name" label-for="parent-input" invalid-feedback="Parent Name is required">
-          <b-form-input id="parent-input"  required></b-form-input>
-
-        </b-form-group>
-        <b-form-group label="Phone Number" label-for="phone-input" invalid-feedback="Phone is required">
-          <b-form-input id="name-input"  required></b-form-input>
-
-        </b-form-group>
-        
+     
+        <color-picker @colorPicked="selectColor" :color="events.cssClass" />
       </form>
       <b-button @click="deleteEvent" variant="danger">Delete</b-button>
     </b-modal>
-          
       </div>
     </template>
 
     <script>
     import FullCalendar from '@fullcalendar/vue';
+    import ColorPicker from './ColorPicker';
     import dayGridPlugin from '@fullcalendar/daygrid';
-    import {db} from '../db';
+    import {
+      db
+    } from '../db';
+    import format from 'date-fns/format';
     import timeGridPlugin from '@fullcalendar/timegrid';
     import momentPlugin from '@fullcalendar/moment';
     import moment from 'moment'
@@ -56,36 +52,108 @@
       name: 'Calendar',
       props: ['events'],
       components: {
-        FullCalendar
+        FullCalendar,
+        ColorPicker
       },
-      data(){
-          return{
-      handlerSeelctAllow: info => {
-        console.log(moment().format('LLLL'))
-        const currentDate = new Date()
-        const start = info.start
-        const end = info.end
-        return (start <= end && start >= currentDate)
+      data() {
+        return {
+          handlerSeelctAllow: info => {
+            console.log(moment().format('LLLL'))
+            const currentDate = new Date()
+            const start = info.start
+            const end = info.end
+            return (start <= end && start >= currentDate)
+          },
+          calendarPlugins: [dayGridPlugin, interactionPlugin, timeGridPlugin, momentPlugin],
+          event: {
+            title: "",
+            backgroundColor:"",
+            start:"",
+            end:"",
+            textColor:"#fff",
+            data: {
+              description: 'hiisdv'
+            }
+          },
+        }
       },
-          calendarPlugins: [ dayGridPlugin, interactionPlugin, timeGridPlugin, momentPlugin]
+      methods: {
+        async handleSubmit(event) {
+          const start = format(this.event.start, 'YYYY-MM-DD HH:mm');
+          const end = format(this.event.end, 'YYYY-MM-DD HH:mm');
+          console.log(start);
+          console.log(end);
+
+          const events = {
+            ...this.event,
+            start,
+            end
           }
-      },
-      methods:{
-        deleteEvent(event){
-            //deleting the event place
+          console.log(events)
+          /*
+            modal for event name
+            description
+            color?
+            
+          */
+          
+          
+          db.collection("schedule").add(events).then(function (snapshot) {
+            snapshot.update({"id":snapshot.id})
+            console.log(snapshot)
+            
+          })
+          
+          this.resetEvent()
         },
-            handleSelect(info) {
-      console.log('form' + info)
-    },
-          handleDateClick(arg) {
-    console.log(arg)
-  },
-         myEventSelected(event, jsEvent, pos) {
-        console.log('eventClick', event, jsEvent, pos)
-        this.$refs.modal.show()
-      }
+        selectColor(color) {
+          this.event = {
+            ...this.event,
+            backgroundColor: color
+          }
+        },
+        deleteEvent(event) {
+          let self=this
+          db.collection("schedule").doc(this.event.id).delete().then(function (snapshot) {
+            self.$refs.modal.hide()
+            self.resetEvent()
+          })
+          
+          //deleting the event place
+        },
+        postEvent(event) {
+          console.log(this.event)
+        },
+        handleSelect(event) {
+          console.log('form' + event.start + event.end)
+          this.event.start=event.start
+          this.event.end=event.end
+          this.$refs.modal.show()
+        },
+        handleDateClick(arg) {
+          console.log(arg)
+        },
+        myEventSelected(event, jsEvent, pos) {
+          this.event = event.event
+          console.log('eventClick',this.event)
+          this.$refs.modal.show()
+        },
+        resetEvent()
+        {
+          this.event={
+            title: "",
+            backgroundColor:"",
+            start:"",
+            end:"",
+            textColor:"#fff",
+            data: {
+              description: 'hiisdv'
+            }
+          }
+        }
+        
       },
-     
+
 
     }
     </script>
