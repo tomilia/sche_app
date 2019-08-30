@@ -6,12 +6,12 @@
               :events=events
               />
           </div>
-          
+          <!--
           <div class="form-holder">
             <h3>Schedule an event</h3>
             <event-form />
           </div>
-         
+         -->
         </div>
       </div>
     </template>
@@ -53,7 +53,8 @@
       align-items: center;
     }
     .calendar-holder {
-      width: 65%;
+      width: 100%;
+      margin: 2%;
     }
     .form-holder {
       width: 35%;
