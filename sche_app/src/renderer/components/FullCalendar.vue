@@ -3,9 +3,9 @@
           <FullCalendar
       :plugins="calendarPlugins"
       defaultView="timeGridWeek"
-      :all-day-slot="false"
+      :all-day-slot="true"
       :unselect-auto="true"
-      :select-overlap="false"
+      :select-overlap="true"
       :events='events'
       :business-hours="{
         startTime: '07:00',
@@ -22,13 +22,21 @@
       @dateClick="handleDateClick"
       @eventClick="myEventSelected"
       @select="handleSelect"/>
-      <b-modal @ok="handleSubmit" id="modal-prevent-closing" ref="modal" title="Submit Your Name" >
+      <b-modal @ok="submitOrModify" id="modal-prevent-closing" ref="modal" title="Submit Your Name" >
       <form ref="form">
         <b-form-group label="Name" label-for="name-input" invalid-feedback="Name is required">
           <b-form-input id="name-input" v-model="event.title" required></b-form-input>
 
         </b-form-group>
-     
+         <b-form-checkbox
+      id="checkbox-1"
+      v-model="recurring"
+      name="checkbox-1"
+      value="true"
+      unchecked-value="false"
+    >
+      Recurring events
+    </b-form-checkbox>
         <color-picker @colorPicked="selectColor" :color="events.cssClass" />
       </form>
       <b-button @click="deleteEvent" variant="danger">Delete</b-button>
@@ -43,7 +51,7 @@
     import {
       db
     } from '../db';
-    import format from 'date-fns/format';
+    import {format, getDay} from 'date-fns';
     import timeGridPlugin from '@fullcalendar/timegrid';
     import momentPlugin from '@fullcalendar/moment';
     import moment from 'moment'
@@ -65,11 +73,19 @@
             return (start <= end && start >= currentDate)
           },
           calendarPlugins: [dayGridPlugin, interactionPlugin, timeGridPlugin, momentPlugin],
+          recurring:true,
+          recur_event:{
+            startTime:"",
+            endTime:"",
+            textColor:"#fff",
+            daysOfWeek:""
+          },
           event: {
             title: "",
             backgroundColor:"",
             start:"",
             end:"",
+            dow: [0, 1, 2, 3, 4, 5, 6],
             textColor:"#fff",
             data: {
               description: 'hiisdv'
@@ -79,36 +95,79 @@
       },
       methods: {
         async handleSubmit(event) {
+          var events=""
+          var isEventTrue = (this.recurring === 'true')
+          console.log(isEventTrue)
+          if(isEventTrue)
+          {
+           console.log("zxczx")
+          const title = this.event.title
+          const startTime = format(this.event.start, 'HH:mm')
+          const endTime = format(this.event.end, 'HH:mm')
+          var daysOfWeek=[]
+          daysOfWeek.push(getDay(this.event.start))
+            events={
+              ...this.recur_event,
+              textColor:"#fff",
+              title,
+              startTime,
+              endTime,
+              daysOfWeek
+            }
+          }
+          else{
+             console.log("askcpa")
           const start = format(this.event.start, 'YYYY-MM-DD HH:mm');
           const end = format(this.event.end, 'YYYY-MM-DD HH:mm');
-          console.log(start);
-          console.log(end);
-
-          const events = {
+           events={
             ...this.event,
             start,
             end
           }
+            
+          }
+          
           console.log(events)
           /*
             modal for event name
             description
             color?
-            
-          */
+            */
           
           
           db.collection("schedule").add(events).then(function (snapshot) {
             snapshot.update({"id":snapshot.id})
+            
             console.log(snapshot)
             
           })
           
           this.resetEvent()
         },
+        handleModify(event)
+        {
+            console.log("modifying")
+        },
+        submitOrModify(event){
+          console.log(this.modifying_event)
+          
+          if(this.modifying_event==true)
+          {
+            this.handleModify(event)
+          }
+          else
+          {
+            this.handleSubmit(event)
+          }
+
+        },
         selectColor(color) {
           this.event = {
             ...this.event,
+            backgroundColor: color
+          }
+          this.recur_event = {
+            ...this.recur_event,
             backgroundColor: color
           }
         },
@@ -125,6 +184,7 @@
           console.log(this.event)
         },
         handleSelect(event) {
+          this.modifying_event=false
           console.log('form' + event.start + event.end)
           this.event.start=event.start
           this.event.end=event.end
@@ -134,6 +194,7 @@
           console.log(arg)
         },
         myEventSelected(event, jsEvent, pos) {
+          this.modifying_event=true
           this.event = event.event
           console.log('eventClick',this.event)
           this.$refs.modal.show()
@@ -145,10 +206,17 @@
             backgroundColor:"",
             start:"",
             end:"",
+            dow: [0, 1, 2, 3, 4, 5, 6],
             textColor:"#fff",
             data: {
               description: 'hiisdv'
             }
+          }
+          this.recur_event={
+            title: "",
+            startTime:"",
+            endTime:"",
+            daysOfWeek:""
           }
         }
         
