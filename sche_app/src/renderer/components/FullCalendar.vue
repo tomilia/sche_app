@@ -25,15 +25,15 @@
       <b-modal @ok="submitOrModify" id="modal-prevent-closing" ref="modal" title="Submit Your Name" >
       <form ref="form">
         <b-form-group label="Name" label-for="name-input" invalid-feedback="Name is required">
-          <b-form-input id="name-input" v-model="event.title" required></b-form-input>
+          <b-form-input id="name-input" v-model="temp_title" required></b-form-input>
 
         </b-form-group>
          <b-form-checkbox
       id="checkbox-1"
       v-model="recurring"
       name="checkbox-1"
-      value="true"
-      unchecked-value="false"
+      value=true
+      unchecked-value=false
     >
       Recurring events
     </b-form-checkbox>
@@ -65,6 +65,7 @@
       },
       data() {
         return {
+
           handlerSeelctAllow: info => {
             console.log(moment().format('LLLL'))
             const currentDate = new Date()
@@ -81,7 +82,6 @@
             daysOfWeek:""
           },
           event: {
-            title: "",
             backgroundColor:"",
             start:"",
             end:"",
@@ -91,6 +91,7 @@
               description: 'hiisdv'
             }
           },
+          temp_title:""
         }
       },
       methods: {
@@ -98,10 +99,10 @@
           var events=""
           var isEventTrue = (this.recurring === 'true')
           console.log(isEventTrue)
+          const title = this.temp_title
           if(isEventTrue)
           {
            console.log("zxczx")
-          const title = this.event.title
           const startTime = format(this.event.start, 'HH:mm')
           const endTime = format(this.event.end, 'HH:mm')
           var daysOfWeek=[]
@@ -117,10 +118,12 @@
           }
           else{
              console.log("askcpa")
+             
           const start = format(this.event.start, 'YYYY-MM-DD HH:mm');
           const end = format(this.event.end, 'YYYY-MM-DD HH:mm');
            events={
             ...this.event,
+            title,
             start,
             end
           }
@@ -146,10 +149,12 @@
         },
         handleModify(event)
         {
-            console.log("modifying")
+            console.log(this.temp_title)
+            //Modify not done
+            //db.collection("schedule").get(this.event.id).then()
         },
         submitOrModify(event){
-          console.log(this.modifying_event)
+          console.log(typeof this.modifying_event)
           
           if(this.modifying_event==true)
           {
@@ -197,6 +202,7 @@
           this.modifying_event=true
           this.event = event.event
           console.log('eventClick',this.event)
+          this.temp_title=this.event.title
           this.$refs.modal.show()
         },
         resetEvent()

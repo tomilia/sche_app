@@ -30,6 +30,10 @@
     <b-button variant="success" class="float" v-b-modal.modal-prevent-closing @click="modifying=false">+ Add</b-button>
     <b-modal id="modal-prevent-closing" ref="modal" title="Submit Your Name" @hidden="resetModal" @ok="handleOk">
       <form ref="form" @submit.stop.prevent="handleSubmit">
+        <b-form-group label="ID" label-for="name-input" invalid-feedback="Name is required">
+          <b-form-input id="name-input" v-model="form.ID" required></b-form-input>
+
+        </b-form-group>
         <b-form-group label="Name" label-for="name-input" invalid-feedback="Name is required">
           <b-form-input id="name-input" v-model="form.name" required></b-form-input>
 
@@ -253,14 +257,16 @@
         //this.formEmbed(record.name,record.parent_name,record.phone_num)
     
         this.modifying = true
+        console.log("dasd",record.id)
         this.current_mod_record = record.id
-        this.formEmbed(record.name, record.parent_name, record.phone_num, record.levels, record.status,record.lesson,record.remarks)
+        this.formEmbed(record.ID,record.name, record.parent_name, record.phone_num, record.levels, record.status,record.lesson,record.remarks)
 
         this.$refs.modal.show()
 
       },
-      formEmbed(name, parent_name, phone_num, levels, status,lesson,remarks) {
+      formEmbed(id,name, parent_name, phone_num, levels, status,lesson,remarks) {
         console.log(name, parent_name, phone_num)
+        this.form.ID = id
         this.form.name = name
         this.form.parent_name = parent_name
         this.form.phone_num = phone_num
@@ -286,6 +292,7 @@
       },
       ignoreDateToForm(){
         return {
+          ID: this.form.ID,
           name: this.form.name,
           parent_name: this.form.parent_name,
           phone_num: this.form.phone_num,
@@ -298,7 +305,7 @@
       update_new_id(id,self){
       
         var new_id={
-          'ID':id.toLowerCase().substring(0,7)
+          'ID':self.form.ID
         }
       db.collection("docs").doc(id).update(new_id).then(function () {
             self.$nextTick(() => {
@@ -321,7 +328,7 @@
         let self = this;
         //compensate status --> status_selected
         this.form.status = this.status_selected
-        console.log("former:",this.form.status, this.status_selected)
+        console.log("former:",this.form.ID, this.status_selected)
         if (!this.modifying) {
           this.form.create_at = new Date().toLocaleString()
           console.log(this.form.create_at)
@@ -333,6 +340,7 @@
           })
         } else {
           var x=this.ignoreDateToForm()
+          console.log(x)
           db.collection("docs").doc(this.current_mod_record).update(x).then(function () {
             self.$nextTick(() => {
               self.$refs.modal.hide()
@@ -385,7 +393,6 @@
           ,
           '  '],
         form: {
-          id: '',
           ID: '',
           name: '',
           parent_name: '',
@@ -427,7 +434,24 @@
           {
             value: '3+',
             text: 'Level 3+'
+          },
+          {
+            value: 'R1',
+            text: 'Robot Level 1'
+          },
+          {
+            value: 'R2',
+            text: 'Robot Level 2'
+          },
+          {
+            value: 'R3',
+            text: 'Robot Level 3'
+          },
+          {
+            value: 'R4',
+            text: 'Robot Level 4'
           }
+          
         ],
         status_opts: [
           {
