@@ -22,7 +22,7 @@
       @dateClick="handleDateClick"
       @eventClick="myEventSelected"
       @select="handleSelect"/>
-      <b-modal @ok="submitOrModify" id="modal-prevent-closing" ref="modal" title="Submit Your Name" >
+      <b-modal @ok="submitOrModify" @hidden="closeModal" id="modal-prevent-closing" ref="modal" title="Submit Your Name" >
       <form ref="form">
         <b-form-group label="Name" label-for="name-input" invalid-feedback="Name is required">
           <b-form-input id="name-input" v-model="temp_title" required></b-form-input>
@@ -32,8 +32,6 @@
       id="checkbox-1"
       v-model="recurring"
       name="checkbox-1"
-      value=true
-      unchecked-value=false
     >
       Recurring events
     </b-form-checkbox>
@@ -79,13 +77,15 @@
             startTime:"",
             endTime:"",
             textColor:"#fff",
-            daysOfWeek:""
+            daysOfWeek:"",
+            weekly:true
           },
           event: {
             backgroundColor:"",
             start:"",
             end:"",
             dow: [0, 1, 2, 3, 4, 5, 6],
+            weekly:false,
             textColor:"#fff",
             data: {
               description: 'hiisdv'
@@ -97,8 +97,8 @@
       methods: {
         async handleSubmit(event) {
           var events=""
-          var isEventTrue = (this.recurring === 'true')
-          console.log(isEventTrue)
+          var isEventTrue = (this.recurring === 'true' || this.recurring === true)
+          console.log("thz"+isEventTrue)
           const title = this.temp_title
           if(isEventTrue)
           {
@@ -147,11 +147,15 @@
           
           this.resetEvent()
         },
+        closeModal(event)
+        {
+          this.resetEvent()
+        },
         handleModify(event)
         {
-            console.log(this.temp_title)
-            //Modify not done
-            //db.collection("schedule").get(this.event.id).then()
+            var isEventTrue = (this.recurring === 'true' || this.recurring === true)
+           console.log("thzx"+isEventTrue)
+            db.collection("schedule").doc(this.event.id).update({'title':this.temp_title})
         },
         submitOrModify(event){
           console.log(typeof this.modifying_event)
@@ -201,8 +205,9 @@
         myEventSelected(event, jsEvent, pos) {
           this.modifying_event=true
           this.event = event.event
-          console.log('eventClick',this.event)
+          
           this.temp_title=this.event.title
+          console.log('eventClick weekly',event)
           this.$refs.modal.show()
         },
         resetEvent()
@@ -212,6 +217,7 @@
             backgroundColor:"",
             start:"",
             end:"",
+            weekly:false,
             dow: [0, 1, 2, 3, 4, 5, 6],
             textColor:"#fff",
             data: {
@@ -222,7 +228,8 @@
             title: "",
             startTime:"",
             endTime:"",
-            daysOfWeek:""
+            daysOfWeek:"",
+            weekly:true
           }
         }
         
